@@ -13,12 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --]]
 
 --!strict
-const Signal = require(script.Parent:FindFirstChild("Signal"))
-
 export type RemoteValue<T> = {
 	_remoteEventConnection: RBXScriptConnection,
 	Value: T,
-	OnChanged: Signal.Signal<T>,
+	OnChanged: RBXScriptSignal,
 	
 	new: (tag: string, async: boolean?) -> RemoteValue<T>,
 	Destroy: (self: RemoteValue<T>) -> (),
@@ -34,12 +32,11 @@ function RemoteValue.new<T>(tag, async)
 	
 	local remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
 	local remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
+
+	self.OnChanged = remoteEvent.OnClientEvent
 	
-	self.OnChanged = Signal.new()
-	
-	self._remoteEventConnection = remoteEvent.OnClientEvent:Connect(function(value: T)
+	self.OnChanged:Connect(function(value: T)
 		self.Value = value
-		self.OnChanged:Fire(value)
 	end)
 	
 	if async == true then
@@ -58,7 +55,6 @@ end
 
 function RemoteValue:Destroy()
 	self._remoteEventConnection:Disconnect()
-	self.OnChanged:DisconnectAll()
 end
 
 return RemoteValue
