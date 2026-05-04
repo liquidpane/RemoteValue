@@ -30,10 +30,10 @@ const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
 function RemoteValue.new<T>(tag: string, async: boolean?): RemoteValue< figureOutRemoteValueGenericType<T> >
-	local self = setmetatable({}, RemoteValue)
+	const self = setmetatable({}, RemoteValue)
 	
-	local remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
-	local remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
+	const remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
+	const remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
 
 	self.OnChanged = remoteEvent.OnClientEvent
 	
