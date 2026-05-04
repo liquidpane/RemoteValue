@@ -14,12 +14,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 --!strict
 export type RemoteValue<T> = {
-	_remoteEventConnection: RBXScriptConnection,
 	Value: T,
 	OnChanged: RBXScriptSignal,
 	
 	new: (tag: string, async: boolean?) -> RemoteValue<T>,
-	Destroy: (self: RemoteValue<T>) -> (),
 	
 	__index: RemoteValue<T>
 }
@@ -51,10 +49,6 @@ function RemoteValue.new<T>(tag, async)
 	end
 	
 	return self
-end
-
-function RemoteValue:Destroy()
-	self._remoteEventConnection:Disconnect()
 end
 
 return RemoteValue
