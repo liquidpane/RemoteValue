@@ -33,7 +33,6 @@ function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGener
 	const self = setmetatable({}, RemoteValue)
 	
 	const remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
-	const remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
 
 	self.OnChanged = remoteEvent.OnClientEvent
 	
@@ -42,6 +41,7 @@ function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGener
 	end)
 	
 	task.spawn(function()
+		const remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
 		local value = remoteFunction:InvokeServer()
 		if self.Value then return end
 
