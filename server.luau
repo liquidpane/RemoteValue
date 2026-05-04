@@ -22,30 +22,28 @@ const remoteValueClientScript = c_agnostic:FindFirstChild("Modules"):FindFirstCh
 const unavailableTags: {[string]: true} = {}
 
 export type RemoteValue<T> = {
-	_tag: string,
-	_remoteEvent: RemoteEvent,
-	_remoteFunction: RemoteFunction,
-	_values: {[Player]: T},
-	_playerRemovingConnection: RBXScriptConnection,
-	_playersThatInvokedServer: {[Player]: true},
-	
-	Get: (self: RemoteValue<T>, player: Player) -> T,
-	Destroy: (self: RemoteValue<T>) -> (),
 	Update: (self: RemoteValue<T>, player: Player, value: T) -> (),
-	new: (tag: string) -> RemoteValue<T>,
-	
-	__index: RemoteValue<T>
+	Get: (self: RemoteValue<T>, player: Player) -> T,
+	Destroy: (self: RemoteValue<T>) -> ()
 }
 
-const RemoteValue = {} :: RemoteValue<any>
+type function figureOutremoteValueGenericType(ty)
+	if ty == types.unknown then
+		return types.any
+	else
+		return ty
+	end
+end
+
+const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
-function RemoteValue.new<T>(tag)
+function RemoteValue.new<T>(tag: string): RemoteValue< figureOutremoteValueGenericType<T> >
 	if unavailableTags[tag] then
 		error("Tag already taken!")
 	end
 	
-	const self = setmetatable({}, RemoteValue) :: RemoteValue<T>
+	const self = setmetatable({}, RemoteValue)
 	
 	self._tag = tag
 	self._values = {}
@@ -83,7 +81,7 @@ function RemoteValue.new<T>(tag)
 		self._values[player] = nil
 	end)
 	
-	return self
+	return self :: RemoteValue<T>
 end
 
 function RemoteValue:Update(player, value)
