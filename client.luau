@@ -29,7 +29,7 @@ end
 const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
-function RemoteValue.new<T>(tag: string, async: boolean?): RemoteValue< figureOutRemoteValueGenericType<T> >
+function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGenericType<T> >
 	const self = setmetatable({}, RemoteValue)
 	
 	const remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
@@ -41,16 +41,12 @@ function RemoteValue.new<T>(tag: string, async: boolean?): RemoteValue< figureOu
 		self.Value = value
 	end)
 	
-	if async == true then
-		task.spawn(function()
-			local value = remoteFunction:InvokeServer()
-			if self.Value then return end
-			
-			self.Value = value
-		end)
-	else
-		self.Value = remoteFunction:InvokeServer()
-	end
+	task.spawn(function()
+		local value = remoteFunction:InvokeServer()
+		if self.Value then return end
+
+		self.Value = value
+	end)
 	
 	return self :: RemoteValue<T>
 end
