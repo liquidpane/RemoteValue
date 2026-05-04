@@ -15,18 +15,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --!strict
 export type RemoteValue<T> = {
 	Value: T,
-	OnChanged: RBXScriptSignal,
-	
-	new: (tag: string, async: boolean?) -> RemoteValue<T>,
-	
-	__index: RemoteValue<T>
+	OnChanged: RBXScriptSignal
 }
 
-const RemoteValue = {} :: RemoteValue<any>
+type function figureOutRemoteValueGenericType(ty)
+	if ty == types.unknown then
+		return types.any
+	else
+		return ty
+	end
+end
+
+const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
-function RemoteValue.new<T>(tag, async)
-	local self = setmetatable({}, RemoteValue) :: RemoteValue<T>
+function RemoteValue.new<T>(tag: string, async: boolean?): RemoteValue< figureOutRemoteValueGenericType<T> >
+	local self = setmetatable({}, RemoteValue)
 	
 	local remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
 	local remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
@@ -48,7 +52,7 @@ function RemoteValue.new<T>(tag, async)
 		self.Value = remoteFunction:InvokeServer()
 	end
 	
-	return self
+	return self :: RemoteValue<T>
 end
 
 return RemoteValue
