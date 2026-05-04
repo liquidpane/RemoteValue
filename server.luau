@@ -13,9 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --]]
 
 --!strict
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Players = game:GetService("Players")
 
-const remoteValueClientScript = --path to client side module
+local c_agnostic = ReplicatedStorage:FindFirstChild("Code"):FindFirstChild("Agnostic")
+const remoteValueClientScript = c_agnostic:FindFirstChild("Modules"):FindFirstChild("RemoteValue")
 
 const unavailableTags: {[string]: true} = {}
 
@@ -25,7 +27,7 @@ export type RemoteValue<T> = {
 	Destroy: (self: RemoteValue<T>) -> ()
 }
 
-type function figureOutremoteValueGenericType(ty)
+type function figureOutRemoteValueGenericType(ty)
 	if ty == types.unknown then
 		return types.any
 	else
@@ -36,55 +38,55 @@ end
 const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
-function RemoteValue.new<T>(tag: string): RemoteValue< figureOutremoteValueGenericType<T> >
+function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGenericType<T> >
 	if unavailableTags[tag] then
 		error("Tag already taken!")
 	end
-
+	
 	const self = setmetatable({}, RemoteValue)
-
+	
 	self._tag = tag
 	self._values = {}
 	self._playersThatInvokedServer = {}
-
+	
 	unavailableTags[tag] = true
-
+	
 	const remoteEvent = Instance.new("RemoteEvent")
 	remoteEvent.Name = self._tag .. "Event"
 	remoteEvent.Parent = remoteValueClientScript
 	self._remoteEvent = remoteEvent
-
+	
 	const remoteFunction = Instance.new("RemoteFunction")
 	remoteFunction.Name = self._tag .. "Function"
-
+	
 	remoteFunction.OnServerInvoke = function(player: Player): T?
 		if self._playersThatInvokedServer[player] then return nil end
 		self._playersThatInvokedServer[player] = true
-
+		
 		local value = self._values[player]
-
+		
 		while value == nil and player.Parent == Players do
 			value = self._values[player]
 			task.wait()
 		end
-
+		
 		return value
 	end
-
+	
 	remoteFunction.Parent = remoteValueClientScript
 	self._remoteFunction = remoteFunction
-
+	
 	self._playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
 		self._playersThatInvokedServer[player] = nil
 		self._values[player] = nil
 	end)
-
+	
 	return self :: RemoteValue<T>
 end
 
 function RemoteValue:Update(player, value)
 	if player.Parent ~= Players then return end
-
+	
 	self._values[player] = value
 	self._remoteEvent:FireClient(player, value)
 end
@@ -97,7 +99,7 @@ function RemoteValue:Destroy()
 	self._remoteEvent:Destroy()
 	self._remoteFunction:Destroy()
 	self._playerRemovingConnection:Disconnect()
-
+	
 	unavailableTags[self._tag] = nil
 end
 
