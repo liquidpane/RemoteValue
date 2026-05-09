@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --!strict
 export type RemoteValue<T> = {
 	Value: T,
-	OnChanged: RBXScriptSignal
+	OnChanged: Signal.Signal<T>
 }
 
 type function figureOutRemoteValueGenericType(ty)
@@ -26,29 +26,28 @@ type function figureOutRemoteValueGenericType(ty)
 	end
 end
 
+const Signal = require(script.Parent.Signal)
+
 const RemoteValue = {}
 RemoteValue.__index = RemoteValue
 
 function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGenericType<T> >
-	const self = setmetatable({}, RemoteValue)
+	const self = setmetatable({}, RemoteValue) :: RemoteValue<T>
 	
-	const remoteEvent = script:WaitForChild(tag .. "Event") :: RemoteEvent
+	const instance = script:WaitForChild(tag) :: Folder
 
-	self.OnChanged = remoteEvent.OnClientEvent
+	const signal = Signal.new()
 	
-	self.OnChanged:Connect(function(value: T)
-		self.Value = value
+	instance:GetAttributeChangedSignal("Value"):Connect(function()
+		self.Value = instance:GetAttribute("Value")
+		signal:Fire(self.Value)
 	end)
 	
-	task.spawn(function()
-		const remoteFunction = script:WaitForChild(tag .. "Function") :: RemoteFunction
-		local value = remoteFunction:InvokeServer()
-		if self.Value then return end
-
-		self.Value = value
-	end)
+	self.OnChanged = signal
 	
-	return self :: RemoteValue<T>
+	self.Value = instance:GetAttribute("Value")
+	
+	return self
 end
 
 return RemoteValue
