@@ -47,37 +47,15 @@ function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGener
 	
 	self._tag = tag
 	self._values = {}
-	self._playersThatInvokedServer = {}
 	
 	unavailableTags[tag] = true
 	
-	const remoteEvent = Instance.new("RemoteEvent")
-	remoteEvent.Name = self._tag .. "Event"
-	remoteEvent.Parent = remoteValueClientScript
-	self._remoteEvent = remoteEvent
-	
-	const remoteFunction = Instance.new("RemoteFunction")
-	remoteFunction.Name = self._tag .. "Function"
-	
-	remoteFunction.OnServerInvoke = function(player: Player): T?
-		if self._playersThatInvokedServer[player] then return nil end
-		self._playersThatInvokedServer[player] = true
-		
-		local value = self._values[player]
-		
-		while value == nil and player.Parent == Players do
-			value = self._values[player]
-			task.wait()
-		end
-		
-		return value
-	end
-	
-	remoteFunction.Parent = remoteValueClientScript
-	self._remoteFunction = remoteFunction
+	local instance = Instance.new("Folder")
+	instance.Name = tag
+	instance.Parent = remoteValueClientScript
+	self.instance = instance
 	
 	self._playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
-		self._playersThatInvokedServer[player] = nil
 		self._values[player] = nil
 	end)
 	
@@ -88,7 +66,7 @@ function RemoteValue:Update(player, value)
 	if player.Parent ~= Players then return end
 	
 	self._values[player] = value
-	self._remoteEvent:FireClient(player, value)
+	self.instance:SetAttribute("Value", value)
 end
 
 function RemoteValue:Get(player)
@@ -96,8 +74,6 @@ function RemoteValue:Get(player)
 end
 
 function RemoteValue:Destroy()
-	self._remoteEvent:Destroy()
-	self._remoteFunction:Destroy()
 	self._playerRemovingConnection:Disconnect()
 	
 	unavailableTags[self._tag] = nil
