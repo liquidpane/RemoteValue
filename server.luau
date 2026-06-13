@@ -16,7 +16,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Players = game:GetService("Players")
 
-local c_agnostic = ReplicatedStorage:FindFirstChild("Code"):FindFirstChild("Agnostic")
+const c_agnostic = ReplicatedStorage:FindFirstChild("Code"):FindFirstChild("Agnostic")
 const remoteValueClientScript = c_agnostic:FindFirstChild("Modules"):FindFirstChild("RemoteValue")
 
 const unavailableTags: {[string]: true} = {}
@@ -50,11 +50,6 @@ function RemoteValue.new<T>(tag: string): RemoteValue< figureOutRemoteValueGener
 	
 	unavailableTags[tag] = true
 	
-	local instance = Instance.new("Folder")
-	instance.Name = tag
-	instance.Parent = remoteValueClientScript
-	self.instance = instance
-	
 	self._playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
 		self._values[player] = nil
 	end)
@@ -64,9 +59,16 @@ end
 
 function RemoteValue:Update(player, value)
 	if player.Parent ~= Players then return end
-	
+
+	const instance = remoteValueClient:FindFirstChild(self._tag .. player.Name)
+	if not instance then
+		instance = Instance.new("Folder")
+		instance.Name = self._tag .. player.Name
+		instance.Parent = remoteValueClientScript
+	end
+
 	self._values[player] = value
-	self.instance:SetAttribute("Value", value)
+	instance:SetAttribute("Value", value)
 end
 
 function RemoteValue:Get(player)
@@ -75,6 +77,14 @@ end
 
 function RemoteValue:Destroy()
 	self._playerRemovingConnection:Disconnect()
+	table.clear(self._values)
+
+	for _, player in Players:GetPlayers() do
+		const instance = remoteValueClient:FindFirstChild(self._tag .. player.Name)
+		if instance then
+			instance:Destroy()
+		end
+	end
 	
 	unavailableTags[self._tag] = nil
 end
